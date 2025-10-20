@@ -1,0 +1,5 @@
+{
+  "name": "Trade-Tracker Pro",
+  "description": "A sophisticated, mobile-friendly web application for logging, analyzing, and forecasting stock trades. It features real-time P&L tracking, date-range filtering, and AI-powered trade suggestions from Gemini to enhance your trading strategy.",
+  "requestFramePermissions": []
+}
