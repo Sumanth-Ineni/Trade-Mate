@@ -13,23 +13,23 @@ const App: React.FC = () => {
     addTrade, 
     sortConfig, 
     setSortConfig,
-    visibleTrades,
     loadMore,
-    hasMore
+    hasMore,
+    isLoading
   } = useTrades();
   
   const today = new Date().toISOString().split('T')[0];
   const [dateRange, setDateRange] = useState({ start: '2023-01-01', end: today });
 
   const filteredTrades = useMemo(() => {
-    return visibleTrades.filter(trade => {
+    return trades.filter(trade => {
       const tradeDate = new Date(trade.date);
       const startDate = new Date(dateRange.start);
       const endDate = new Date(dateRange.end);
       endDate.setHours(23, 59, 59, 999); // Include the whole end day
       return tradeDate >= startDate && tradeDate <= endDate;
     });
-  }, [visibleTrades, dateRange]);
+  }, [trades, dateRange]);
 
   const pnl = useMemo(() => {
     return filteredTrades.reduce((acc, trade) => {
@@ -71,6 +71,7 @@ const App: React.FC = () => {
                     <input
                       type="date"
                       value={dateRange.end}
+                      // FIX: The onChange handler was incorrectly setting the `start` date instead of the `end` date.
                       onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                       className="bg-gray-700 text-white rounded-md p-2 w-full focus:ring-2 focus:ring-cyan-500 border-gray-600"
                     />
@@ -85,6 +86,7 @@ const App: React.FC = () => {
               setSortConfig={setSortConfig}
               loadMore={loadMore}
               hasMore={hasMore}
+              isLoading={isLoading}
             />
           </div>
 

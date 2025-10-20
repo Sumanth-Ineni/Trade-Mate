@@ -1,92 +1,72 @@
-
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Trade, SortConfig } from '../types';
-import { TradeType } from '../types';
-import { getOhlcData } from '../services/marketDataService';
-import { calculateTradeRating } from '../utils/ratingCalculator';
+import { getTrades, addTrade as apiAddTrade } from '../services/tradeApi';
 
-const INITIAL_PAGE_SIZE = 15;
-
-// Mock initial data without ratings
-const initialTradesData: Omit<Trade, 'rating'>[] = [
-    { id: '1', date: '2024-07-20', time: '09:30:05', ticker: 'AAPL', type: TradeType.Buy, price: 150.50, quantity: 10 },
-    { id: '2', date: '2024-07-20', time: '10:15:22', ticker: 'GOOGL', type: TradeType.Buy, price: 2800.00, quantity: 2 },
-    { id: '3', date: '2024-07-21', time: '14:05:00', ticker: 'AAPL', type: TradeType.Sell, price: 155.25, quantity: 10 },
-    { id: '4', date: '2024-07-22', time: '11:00:00', ticker: 'TSLA', type: TradeType.Buy, price: 650.00, quantity: 5 },
-    { id: '5', date: '2024-07-23', time: '15:45:10', ticker: 'MSFT', type: TradeType.Buy, price: 300.10, quantity: 8 },
-    { id: '6', date: '2024-07-19', time: '09:45:10', ticker: 'NVDA', type: TradeType.Buy, price: 125.10, quantity: 20 },
-    { id: '7', date: '2024-07-18', time: '12:45:10', ticker: 'AMD', type: TradeType.Sell, price: 162.40, quantity: 15 },
-];
+const PAGE_SIZE = 15;
 
 export const useTrades = () => {
     const [trades, setTrades] = useState<Trade[]>([]);
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'descending' });
-    const [visibleCount, setVisibleCount] = useState(INITIAL_PAGE_SIZE);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
 
-    // Effect to load initial trades and calculate their ratings
+    const fetchAndSetTrades = useCallback(async (reset = false) => {
+        setIsLoading(true);
+        try {
+            const currentPage = reset ? 1 : page;
+            const { trades: newTrades, hasMore: newHasMore } = await getTrades(sortConfig, currentPage, PAGE_SIZE);
+            setTrades(prev => reset ? newTrades : [...prev, ...newTrades]);
+            setHasMore(newHasMore);
+            if (reset) setPage(1);
+        } catch (error) {
+            console.error("Failed to fetch trades:", error);
+            // Optionally set an error state here
+        } finally {
+            setIsLoading(false);
+        }
+    }, [sortConfig, page]);
+
     useEffect(() => {
-        const processInitialTrades = async () => {
-            const tradesWithRatings = await Promise.all(
-                initialTradesData.map(async (trade) => {
-                    const ohlc = await getOhlcData(trade.ticker, trade.date);
-                    const rating = calculateTradeRating(trade, ohlc);
-                    return { ...trade, rating };
-                })
-            );
-            setTrades(tradesWithRatings);
-        };
-
-        processInitialTrades();
-    }, []);
+        fetchAndSetTrades(true); // Reset and fetch on sort change
+    }, [sortConfig]);
 
     const addTrade = async (trade: Omit<Trade, 'id' | 'rating'>) => {
-        const ohlc = await getOhlcData(trade.ticker, trade.date);
-        const rating = calculateTradeRating(trade, ohlc);
-        
-        const newTrade: Trade = {
-            ...trade,
-            id: new Date().toISOString() + Math.random(),
-            rating,
-        };
-        setTrades(prevTrades => [newTrade, ...prevTrades]);
+        setIsAdding(true);
+        try {
+            await apiAddTrade(trade);
+            // After adding, refetch to see the new trade
+            // This is simpler than trying to merge and re-sort on the client
+            setSortConfig(current => ({ ...current })); // Trigger refetch
+        } catch(error) {
+            console.error("Failed to add trade:", error);
+            throw error; // re-throw to be caught in form
+        } finally {
+            setIsAdding(false);
+        }
     };
-
-    const sortedTrades = useMemo(() => {
-        const sortableTrades = [...trades];
-        sortableTrades.sort((a, b) => {
-            const aValue = a[sortConfig.key];
-            const bValue = b[sortConfig.key];
-
-            if (sortConfig.key === 'date') {
-                const aDateTime = new Date(`${a.date}T${a.time}`).getTime();
-                const bDateTime = new Date(`${b.date}T${b.time}`).getTime();
-                 if (aDateTime < bDateTime) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (aDateTime > bDateTime) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
-                return 0;
-            }
-
-            if (aValue < bValue) {
-                return sortConfig.direction === 'ascending' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return sortConfig.direction === 'ascending' ? 1 : -1;
-            }
-            return 0;
-        });
-        return sortableTrades;
-    }, [trades, sortConfig]);
-    
-    const visibleTrades = useMemo(() => sortedTrades.slice(0, visibleCount), [sortedTrades, visibleCount]);
     
     const loadMore = () => {
-        setVisibleCount(prevCount => prevCount + INITIAL_PAGE_SIZE);
+        if (!isLoading && hasMore) {
+            setPage(prevPage => prevPage + 1);
+        }
     };
-    
-    const hasMore = visibleCount < sortedTrades.length;
 
-    return { trades, addTrade, sortConfig, setSortConfig, visibleTrades, loadMore, hasMore };
+    useEffect(() => {
+        if (page > 1) {
+            fetchAndSetTrades();
+        }
+    }, [page]);
+    
+    return { 
+      trades, 
+      addTrade, 
+      sortConfig, 
+      setSortConfig, 
+      loadMore, 
+      hasMore, 
+      isLoading,
+      isAdding
+    };
 };
