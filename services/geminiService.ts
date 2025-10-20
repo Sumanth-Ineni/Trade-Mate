@@ -1,5 +1,6 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import type { TradeSuggestionData } from '../types';
 
 // This check is to prevent crashes in environments where process.env is not defined.
 const apiKey = typeof process !== 'undefined' && process.env && process.env.API_KEY
@@ -8,17 +9,29 @@ const apiKey = typeof process !== 'undefined' && process.env && process.env.API_
 
 const ai = new GoogleGenAI({ apiKey });
 
-export const getDailySuggestion = async (): Promise<string> => {
+export const getDailySuggestion = async (): Promise<TradeSuggestionData> => {
   try {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Generate a single, concise stock trade suggestion for today. Include a ticker symbol (e.g., MSFT), a suggested action (Buy/Sell), a target price, and a brief, 2-sentence rationale based on fictional positive market sentiment or a technical indicator. Format it clearly.`,
+        contents: `Generate a single stock trade suggestion for today. Base it on fictional market sentiment or a technical indicator. If the suggested action is 'Buy', you must also include a stop-loss price. The prices should be realistic numbers.`,
         config: {
             temperature: 0.7,
-            maxOutputTokens: 100,
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    ticker: { type: Type.STRING, description: 'The stock ticker symbol, e.g., AAPL' },
+                    action: { type: Type.STRING, enum: ['Buy', 'Sell'], description: 'The suggested action.' },
+                    targetPrice: { type: Type.NUMBER, description: 'The suggested target price for the trade.' },
+                    stopLossPrice: { type: Type.NUMBER, description: 'The suggested stop-loss price. This is required for "Buy" actions.' },
+                    rationale: { type: Type.STRING, description: 'A brief, 2-sentence rationale for the suggestion.' }
+                },
+                required: ['ticker', 'action', 'targetPrice', 'rationale']
+            }
         }
     });
-    return response.text;
+    const suggestion = JSON.parse(response.text);
+    return suggestion;
   } catch (error) {
     console.error("Gemini API call failed for daily suggestion:", error);
     throw new Error("Failed to fetch suggestion from Gemini API.");

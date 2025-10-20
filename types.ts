@@ -21,3 +21,11 @@ export interface SortConfig {
   key: SortableTradeKeys;
   direction: 'ascending' | 'descending';
 }
+
+export interface TradeSuggestionData {
+  ticker: string;
+  action: 'Buy' | 'Sell';
+  targetPrice: number;
+  stopLossPrice?: number;
+  rationale: string;
+}
