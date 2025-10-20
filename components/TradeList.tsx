@@ -1,8 +1,9 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import type { Trade, SortConfig, SortableTradeKeys } from '../types';
 import { TradeType } from '../types';
 import { ArrowUpIcon, ArrowDownIcon } from './icons/SortIcons';
+import { TradeDetailModal } from './TradeDetailModal';
+import { getOhlcData } from '../services/marketDataService';
 
 interface TradeListProps {
   trades: Trade[];
@@ -10,6 +11,13 @@ interface TradeListProps {
   setSortConfig: (config: SortConfig) => void;
   loadMore: () => void;
   hasMore: boolean;
+}
+
+interface OhlcData {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
 }
 
 const SortableHeader: React.FC<{
@@ -44,6 +52,29 @@ const SortableHeader: React.FC<{
 };
 
 export const TradeList: React.FC<TradeListProps> = ({ trades, sortConfig, setSortConfig, loadMore, hasMore }) => {
+  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [tradeOhlc, setTradeOhlc] = useState<OhlcData | null>(null);
+  const [isModalLoading, setIsModalLoading] = useState(false);
+
+  const handleRowClick = async (trade: Trade) => {
+    setSelectedTrade(trade);
+    setIsModalLoading(true);
+    setTradeOhlc(null); // Clear previous data
+    try {
+      const ohlc = await getOhlcData(trade.ticker, trade.date);
+      setTradeOhlc(ohlc);
+    } catch (error) {
+      console.error("Failed to fetch OHLC data for modal:", error);
+    } finally {
+      setIsModalLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedTrade(null);
+    setTradeOhlc(null);
+  };
+  
   const getRatingColor = (rating: number) => {
     if (rating > 0.5) return 'bg-green-500';
     if (rating > 0) return 'bg-green-700';
@@ -69,7 +100,7 @@ export const TradeList: React.FC<TradeListProps> = ({ trades, sortConfig, setSor
           </thead>
           <tbody className="bg-gray-800 divide-y divide-gray-700">
             {trades.map(trade => (
-              <tr key={trade.id} className="hover:bg-gray-700/50">
+              <tr key={trade.id} className="hover:bg-gray-700/50 cursor-pointer" onClick={() => handleRowClick(trade)}>
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
                     <div>{new Date(trade.date).toLocaleDateString()}</div>
                     <div className="text-xs text-gray-500">{trade.time}</div>
@@ -102,6 +133,14 @@ export const TradeList: React.FC<TradeListProps> = ({ trades, sortConfig, setSor
             Load More
           </button>
         </div>
+      )}
+      {selectedTrade && (
+        <TradeDetailModal
+          trade={selectedTrade}
+          ohlc={tradeOhlc}
+          isLoading={isModalLoading}
+          onClose={handleCloseModal}
+        />
       )}
     </div>
   );

@@ -41,8 +41,8 @@ const App: React.FC = () => {
     }, 0);
   }, [filteredTrades]);
   
-  const handleAddTrade = (newTrade: Omit<Trade, 'id' | 'rating'>) => {
-    addTrade(newTrade);
+  const handleAddTrade = async (newTrade: Omit<Trade, 'id' | 'rating'>) => {
+    await addTrade(newTrade);
   };
 
   return (
