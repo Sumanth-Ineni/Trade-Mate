@@ -1,7 +1,7 @@
 import type { Trade, SortConfig } from '../types';
 
 // In a real app, this would be in a config file (e.g., .env)
-const API_BASE_URL = '/api'; 
+const API_BASE_URL = 'https://trade-mate-backend-1093010213661.europe-west1.run.app/api'; 
 
 export const getTrades = async (
     sortConfig: SortConfig,
