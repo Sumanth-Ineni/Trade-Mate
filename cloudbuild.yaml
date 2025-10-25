@@ -2,9 +2,21 @@
 # Usage: gcloud builds submit --config=cloudbuild.yaml .
 # Substitutions expected: _REGION (e.g. us-central1), _SERVICE (optional), _API_KEY (if you want Cloud Build to set an env var)
 
+# Provide top-level substitution defaults so Cloud Build recognizes the custom
+# substitution variables when they are passed via --substitutions.
+substitutions:
+  _REGION: "us-central1"
+  _SERVICE: "trade-mate-backend"
+  _API_KEY: ""
+
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/trade-mate-backend:$SHORT_SHA', 'server']
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/trade-mate-pro-backend:latest', # Your target image name
+      '-f', 'backend/Dockerfile', # Path to your Dockerfile relative to the repository root
+      './backend' # The build context, also relative to the repository root
+    ]
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/trade-mate-backend:$SHORT_SHA']
@@ -14,11 +26,11 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - '${_SERVICE:-trade-mate-backend}'
+      - '${_SERVICE}'
       - '--image'
       - 'gcr.io/$PROJECT_ID/trade-mate-backend:$SHORT_SHA'
       - '--region'
-      - '${_REGION:-us-central1}'
+      - '${_REGION}'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
