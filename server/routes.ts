@@ -115,7 +115,15 @@ router.get('/suggestions/daily', async (req, res) => {
                 }
             }
         });
-        const suggestion = JSON.parse(response.text);
+        // Guard against undefined response.text from the AI SDK
+        const suggestionText = response.text ?? '{}';
+        let suggestion: any;
+        try {
+            suggestion = JSON.parse(suggestionText);
+        } catch (err) {
+            // If parsing fails, return the raw text as a fallback
+            suggestion = { raw: suggestionText };
+        }
         res.json(suggestion);
     } catch (error) {
         console.error("Gemini API call failed for daily suggestion:", error);

@@ -1,0 +1,32 @@
+# Cloud Build pipeline to build the server Docker image and deploy to Cloud Run.
+# Usage: gcloud builds submit --config=cloudbuild.yaml .
+# Substitutions expected: _REGION (e.g. us-central1), _SERVICE (optional), _API_KEY (if you want Cloud Build to set an env var)
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/trade-mate-backend:$SHORT_SHA', 'server']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/trade-mate-backend:$SHORT_SHA']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE:-trade-mate-backend}'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/trade-mate-backend:$SHORT_SHA'
+      - '--region'
+      - '${_REGION:-us-central1}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      # set env var if provided
+      - '--set-env-vars'
+      - 'API_KEY=${_API_KEY}'
+
+images:
+  - 'gcr.io/$PROJECT_ID/trade-mate-backend:$SHORT_SHA'
+
+timeout: 1200s

@@ -1,0 +1,11 @@
+# This file specifies files that are *not* uploaded to Google Cloud
+# See: https://cloud.google.com/sdk/gcloud/reference/topic/gcloudignore
+node_modules/
+dist/
+.git/
+.gitignore
+.vscode/
+*.log
+.env
+Dockerfile
+cloudbuild.yaml
