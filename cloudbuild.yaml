@@ -9,12 +9,12 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', 'gcr.io/$PROJECT_ID/trade-mate-pro-backend:$SHORT_SHA', # Your target image name
+      '-t', 'gcr.io/$PROJECT_ID/trade-mate-pro-backend:latest', # Your target image name
       '-f', 'server/Dockerfile', # Path to your Dockerfile relative to the repository root
       './server' # The build context, also relative to the repository root
     ]
 
 images:
-  - 'gcr.io/$PROJECT_ID/trade-mate-backend:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/trade-mate-backend:latest'
 
 timeout: 1200s
