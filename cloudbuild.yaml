@@ -15,6 +15,6 @@ steps:
     ]
 
 images:
-  - 'gcr.io/$PROJECT_ID/trade-mate-backend:latest'
+  - 'gcr.io/$PROJECT_ID/trade-mate-pro-backend:latest'
 
 timeout: 1200s
