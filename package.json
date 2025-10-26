@@ -6,16 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "migrate": "node server/database/migrate.js"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "recharts": "^3.3.0",
-    "react-dom": "^19.2.0",
+    "@google-cloud/firestore": "^7.11.6",
     "@google/genai": "^1.25.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

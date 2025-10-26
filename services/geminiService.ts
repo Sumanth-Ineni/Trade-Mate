@@ -1,6 +1,6 @@
 import type { TradeSuggestionData } from '../types';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'https://trade-mate-backend-1093010213661.europe-west1.run.app/api';
 
 export const getDailySuggestion = async (): Promise<TradeSuggestionData> => {
     const response = await fetch(`${API_BASE_URL}/suggestions/daily`);

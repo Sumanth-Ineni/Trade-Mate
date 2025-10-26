@@ -1,3 +1,6 @@
+import db from './database/db.js'; // Your Firestore client initialization
+
+const tradeCollection = db.collection('trades');
 // NOTE: In a real application, types would be shared from a common package.
 // For this environment, we are duplicating the necessary types.
 export enum TradeType {
@@ -74,8 +77,10 @@ export const getOhlcDataForTrade = (ticker: string, date: string): { open: numbe
   return { open, high, low, close };
 };
 
-const initializeData = () => {
-    trades = initialTradesData.map((trade, index) => {
+const initializeData = async () => {
+  const snapshot = await tradeCollection.get();
+    const items = snapshot.docs.map((doc: any) => doc.data());
+    trades = items.map((trade:any, index:any) => {
         const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
         const rating = calculateTradeRating(trade, ohlc);
         return { ...trade, id: `${Date.now()}-${index}`, rating };
