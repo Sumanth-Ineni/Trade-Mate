@@ -1,5 +1,7 @@
-import db from './database/db.js'; // Your Firestore client initialization
+import { Firestore } from "@google-cloud/firestore";
 
+// import db from './database/db.js'; // Your Firestore client initialization
+const db = new Firestore();
 const tradeCollection = db.collection('trades');
 // NOTE: In a real application, types would be shared from a common package.
 // For this environment, we are duplicating the necessary types.
