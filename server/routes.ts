@@ -32,14 +32,14 @@ router.get('/trades', async (req, res) => {
     }
 });
 
-router.post('/trades', (req, res) => {
+router.post('/trades', async (req, res) => {
     try {
         const newTradeData = req.body;
         // Basic validation, would be more robust in a real app (e.g., using Zod)
         if (!newTradeData || !newTradeData.ticker || !newTradeData.price || !newTradeData.quantity) {
             return res.status(400).json({ error: 'Invalid trade data provided.' });
         }
-        const newTrade = addTrade(newTradeData);
+        const newTrade = await addTrade(newTradeData);
         res.status(201).json(newTrade);
     } catch (error) {
         console.error("Error adding trade:", error);
@@ -66,7 +66,7 @@ router.get('/ohlc', (req, res) => {
 router.get('/trades/:id/analysis', async (req, res) => {
     try {
         const { id } = req.params;
-        const trade = getTradeById(id);
+        const trade = await getTradeById(id);
 
         if (!trade) {
             return res.status(404).json({ error: 'Trade not found.' });

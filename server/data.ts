@@ -70,15 +70,15 @@ export const getOhlcDataForTrade = (ticker: string, date: string): { open: numbe
 };
 
 const getTradeData = async () => {
-    const snapshot = await tradeCollection.get();
-    const items = snapshot.docs.map((doc: any) => doc.data());
-    console.log(items);
-    trades = items.map((trade:any, index:any) => {
-        const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
-        const rating = calculateTradeRating(trade, ohlc);
-        return { ...trade, id: `${Date.now()}-${index}`, rating };
-    });
-    return trades;
+  const snapshot = await tradeCollection.get();
+  const items = snapshot.docs.map((doc: any) => doc.data());
+  console.log(items);
+  trades = items.map((trade: any, index: any) => {
+    const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
+    const rating = calculateTradeRating(trade, ohlc);
+    return { ...trade, id: `${Date.now()}-${index}`, rating };
+  });
+  return trades;
 };
 
 // initializeData().then(() => {
@@ -88,44 +88,55 @@ const getTradeData = async () => {
 // --- Data Access Functions ---
 
 export const getTrades = async (sortConfig: SortConfig, page: number, limit: number) => {
-    const trades = await getTradeData();
-    const sortedTrades = [...trades].sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+  const trades = await getTradeData();
+  const sortedTrades = [...trades].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
 
-        if (sortConfig.key === 'date') {
-            const aDateTime = new Date(`${a.date}T${a.time}`).getTime();
-            const bDateTime = new Date(`${b.date}T${b.time}`).getTime();
-            if (aDateTime < bDateTime) return sortConfig.direction === 'ascending' ? -1 : 1;
-            if (aDateTime > bDateTime) return sortConfig.direction === 'ascending' ? 1 : -1;
-            return 0;
-        }
+    if (sortConfig.key === 'date') {
+      const aDateTime = new Date(`${a.date}T${a.time}`).getTime();
+      const bDateTime = new Date(`${b.date}T${b.time}`).getTime();
+      if (aDateTime < bDateTime) return sortConfig.direction === 'ascending' ? -1 : 1;
+      if (aDateTime > bDateTime) return sortConfig.direction === 'ascending' ? 1 : -1;
+      return 0;
+    }
 
-        if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
-        return 0;
-    });
+    if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+    return 0;
+  });
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedTrades = sortedTrades.slice(startIndex, endIndex);
-    const hasMore = endIndex < sortedTrades.length;
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedTrades = sortedTrades.slice(startIndex, endIndex);
+  const hasMore = endIndex < sortedTrades.length;
 
-    return { trades: paginatedTrades, hasMore };
+  return { trades: paginatedTrades, hasMore };
 };
 
-export const addTrade = (trade: Omit<Trade, 'id' | 'rating'>): Trade => {
-    const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
-    const rating = calculateTradeRating(trade, ohlc);
-    const newTrade: Trade = {
-        ...trade,
-        id: new Date().toISOString() + Math.random(),
-        rating,
-    };
+export const addTrade = async (trade: Omit<Trade, 'id' | 'rating'>): Promise<Trade> => {
+  const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
+  const rating = calculateTradeRating(trade, ohlc);
+  const newTrade: Trade = {
+    ...trade,
+    id: new Date().toISOString() + Math.random(),
+    rating,
+  };
+  try {
+    await tradeCollection.add(newTrade);
     trades.unshift(newTrade); // Add to the beginning for immediate visibility
     return newTrade;
+  } catch (error) {
+    console.error('POST /trades error:', error);
+    throw error;
+  }
+
 };
 
-export const getTradeById = (id: string): Trade | undefined => {
-  return trades.find(trade => trade.id === id);
+export const getTradeById = async (id: string): Promise<Trade | undefined >=> {
+  const trade = await tradeCollection.doc(id).get();
+  if (trade.exists) {
+    return trade.data() as Trade;
+  }
+  return undefined;
 };
