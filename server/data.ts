@@ -80,7 +80,8 @@ export const getOhlcDataForTrade = (ticker: string, date: string): { open: numbe
 const initializeData = async () => {
   const snapshot = await tradeCollection.get();
     const items = snapshot.docs.map((doc: any) => doc.data());
-    trades = items.map((trade:any, index:any) => {
+    console.log(items);
+    trades = initialTradesData.map((trade, index) => {
         const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
         const rating = calculateTradeRating(trade, ohlc);
         return { ...trade, id: `${Date.now()}-${index}`, rating };
