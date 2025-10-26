@@ -8,7 +8,8 @@ import apiRoutes = require('./routes');
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 8080;
+const HOST = '0.0.0.0';
+const PORT = process.env.PORT || 8080;
 
 // Middleware
 app.use(cors()); // Enable Cross-Origin Resource Sharing
@@ -17,6 +18,6 @@ app.use(express.json()); // Parse JSON request bodies
 // API routes
 app.use('/api', apiRoutes);
 
-app.listen(port, () => {
-  console.log(`Trade-Tracker Pro server is running on http://localhost:${port}`);
+app.listen(PORT, HOST, , () => {
+  console.log(`Trade-Tracker Pro server is running on http://${HOST}:${PORT}`);
 });
