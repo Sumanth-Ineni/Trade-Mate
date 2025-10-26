@@ -13,7 +13,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // --- Trade Routes ---
 
-router.get('/trades', (req, res) => {
+router.get('/trades', async (req, res) => {
     try {
         const { sortKey, sortDirection, page, limit } = req.query;
         
@@ -24,7 +24,7 @@ router.get('/trades', (req, res) => {
         const pageNum = parseInt(page as string, 10) || 1;
         const limitNum = parseInt(limit as string, 10) || 15;
 
-        const result = getTrades(sortConfig, pageNum, limitNum);
+        const result = await getTrades(sortConfig, pageNum, limitNum);
         res.json(result);
     } catch (error) {
         console.error("Error fetching trades:", error);

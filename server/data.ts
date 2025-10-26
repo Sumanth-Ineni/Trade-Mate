@@ -52,16 +52,6 @@ const mockOhlcDatabase: { [key: string]: { [date: string]: { open: number; high:
   'AMD': { '2024-07-18': { open: 165.00, high: 166.00, low: 160.00, close: 161.00 } },
 };
 
-const initialTradesData: Omit<Trade, 'rating' | 'id'>[] = [
-    { date: '2024-07-20', time: '09:30:05', ticker: 'AAPL', type: TradeType.Buy, price: 150.50, quantity: 10 },
-    { date: '2024-07-20', time: '10:15:22', ticker: 'GOOGL', type: TradeType.Buy, price: 2800.00, quantity: 2 },
-    { date: '2024-07-21', time: '14:05:00', ticker: 'AAPL', type: TradeType.Sell, price: 155.25, quantity: 10 },
-    { date: '2024-07-22', time: '11:00:00', ticker: 'TSLA', type: TradeType.Buy, price: 650.00, quantity: 5 },
-    { date: '2024-07-23', time: '15:45:10', ticker: 'MSFT', type: TradeType.Buy, price: 300.10, quantity: 8 },
-    { date: '2024-07-19', time: '09:45:10', ticker: 'NVDA', type: TradeType.Buy, price: 125.10, quantity: 20 },
-    { date: '2024-07-18', time: '12:45:10', ticker: 'AMD', type: TradeType.Sell, price: 162.40, quantity: 15 },
-];
-
 let trades: Trade[] = [];
 
 export const getOhlcDataForTrade = (ticker: string, date: string): { open: number; high: number; low: number; close: number } => {
@@ -77,8 +67,8 @@ export const getOhlcDataForTrade = (ticker: string, date: string): { open: numbe
   return { open, high, low, close };
 };
 
-const initializeData = async () => {
-  const snapshot = await tradeCollection.get();
+const getTradeData = async () => {
+    const snapshot = await tradeCollection.get();
     const items = snapshot.docs.map((doc: any) => doc.data());
     console.log(items);
     trades = items.map((trade:any, index:any) => {
@@ -86,15 +76,17 @@ const initializeData = async () => {
         const rating = calculateTradeRating(trade, ohlc);
         return { ...trade, id: `${Date.now()}-${index}`, rating };
     });
+    return trades;
 };
 
-initializeData().then(() => {
-  console.log('Data initialized with historic trades.');
-}).catch(console.error);
+// initializeData().then(() => {
+//   console.log('Data initialized with historic trades.');
+// }).catch(console.error);
 
 // --- Data Access Functions ---
 
-export const getTrades = (sortConfig: SortConfig, page: number, limit: number) => {
+export const getTrades = async (sortConfig: SortConfig, page: number, limit: number) => {
+    const trades = await getTradeData();
     const sortedTrades = [...trades].sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
