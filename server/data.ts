@@ -81,14 +81,16 @@ const initializeData = async () => {
   const snapshot = await tradeCollection.get();
     const items = snapshot.docs.map((doc: any) => doc.data());
     console.log(items);
-    trades = initialTradesData.map((trade, index) => {
+    trades = items.map((trade, index) => {
         const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
         const rating = calculateTradeRating(trade, ohlc);
         return { ...trade, id: `${Date.now()}-${index}`, rating };
     });
 };
 
-initializeData();
+initializeData().then(() => {
+  console.log('Data initialized with historic trades.');
+}).catch(console.error);
 
 // --- Data Access Functions ---
 
