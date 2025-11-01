@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { TradeForm } from './components/TradeForm';
 import { TradeList } from './components/TradeList';
 import { PnLCard } from './components/PnLCard';
-import { TradeSuggestion } from './components/TradeSuggestion';
+// import { TradeSuggestion } from './components/TradeSuggestion';
 import { useTrades } from './hooks/useTrades';
 import type { Trade } from './types';
 
@@ -92,7 +92,7 @@ const App: React.FC = () => {
 
           <div className="lg:col-span-1 space-y-8">
             <TradeForm onSubmit={handleAddTrade} />
-            <TradeSuggestion />
+            {/* <TradeSuggestion /> */}
           </div>
         </main>
       </div>
