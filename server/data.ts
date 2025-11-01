@@ -1,4 +1,5 @@
 import { Firestore } from "@google-cloud/firestore";
+import { getDailyOHLC } from "./fetchStock.js";
 
 // import db from './database/db.js'; // Your Firestore client initialization
 const db = new Firestore();
@@ -56,33 +57,38 @@ const mockOhlcDatabase: { [key: string]: { [date: string]: { open: number; high:
 
 let trades: Trade[] = [];
 
-export const getOhlcDataForTrade = (ticker: string, date: string): { open: number; high: number; low: number; close: number } => {
-  const tickerData = mockOhlcDatabase[ticker.toUpperCase()];
-  if (tickerData && tickerData[date]) {
-    return tickerData[date];
+export const getOhlcDataForTrade = async (ticker: string, date: string): Promise<{ open: number; high: number; low: number; close: number }> => {
+  const data = (await getDailyOHLC(ticker.toUpperCase()));
+  if (data) {
+    const dailyOhlc = [date];
+    if (dailyOhlc) {
+      return {
+        open: dailyOhlc['1. open' as keyof typeof dailyOhlc] as number,
+        high: dailyOhlc['2. high' as keyof typeof dailyOhlc] as number,
+        low: dailyOhlc['3. low' as keyof typeof dailyOhlc] as number,
+        close: dailyOhlc['4. close' as keyof typeof dailyOhlc] as number,
+      };
+    } else {
+      console.log(`No daily OHLC data found for ${ticker} on ${date}, using mock data.`);
+      return { open: 0, high: 0, low: 0, close: 0 }; // Default OHLC data
+    }
+  } else {
+    console.log(`No data returned for ${ticker}, using mock data.`);
+    return { open: 0, high: 0, low: 0, close: 0 }; // Default OHLC data
   }
-  const randomBase = Math.random() * 500 + 50;
-  const low = randomBase * 0.98;
-  const high = randomBase * 1.02;
-  const open = low + Math.random() * (high - low);
-  const close = low + Math.random() * (high - low);
-  return { open, high, low, close };
 };
 
 const getTradeData = async () => {
   const snapshot = await tradeCollection.get();
   const items = snapshot.docs.map((doc: any) => doc.data());
-  trades = items.map((trade: any, index: any) => {
-    const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
+  const tradePromises = await items.map(async (trade: any) => {
+    const ohlc = await getOhlcDataForTrade(trade.ticker, trade.date);
     const rating = calculateTradeRating(trade, ohlc);
     return { ...trade, rating };
   });
+  trades = await Promise.all(tradePromises);
   return trades;
 };
-
-// initializeData().then(() => {
-//   console.log('Data initialized with historic trades.');
-// }).catch(console.error);
 
 // --- Data Access Functions ---
 
@@ -114,7 +120,7 @@ export const getTrades = async (sortConfig: SortConfig, page: number, limit: num
 };
 
 export const addTrade = async (trade: Omit<Trade, 'id' | 'rating'>): Promise<Trade> => {
-  const ohlc = getOhlcDataForTrade(trade.ticker, trade.date);
+  const ohlc = await getOhlcDataForTrade(trade.ticker, trade.date);
   const rating = calculateTradeRating(trade, ohlc);
   const newTrade: Trade = {
     ...trade,
@@ -132,7 +138,7 @@ export const addTrade = async (trade: Omit<Trade, 'id' | 'rating'>): Promise<Tra
 
 };
 
-export const getTradeById = async (id: string): Promise<Trade | undefined >=> {
+export const getTradeById = async (id: string): Promise<Trade | undefined> => {
   const trade = await tradeCollection.doc(id).get();
   if (trade.exists) {
     return trade.data() as Trade;
