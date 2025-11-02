@@ -61,8 +61,6 @@ export const getOhlcDataForTrade = async (ticker: string, date: string): Promise
   const data = await getDailyOHLC(ticker.toUpperCase());
   if (data) {
     const dailyOhlc = data[date.toString() as keyof typeof data];
-    console.log("Looking for date:", date, "in data.");
-    console.log("days data:", dailyOhlc);
     if (dailyOhlc) {
       return {
         open: Number(dailyOhlc['1. open' as keyof typeof dailyOhlc]),
