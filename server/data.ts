@@ -58,15 +58,17 @@ const mockOhlcDatabase: { [key: string]: { [date: string]: { open: number; high:
 let trades: Trade[] = [];
 
 export const getOhlcDataForTrade = async (ticker: string, date: string): Promise<{ open: number; high: number; low: number; close: number }> => {
-  const data = (await getDailyOHLC(ticker.toUpperCase()));
+  const data = await getDailyOHLC(ticker.toUpperCase());
   if (data) {
-    const dailyOhlc = [date];
+    const dailyOhlc = data[date.toString() as keyof typeof data];
+    console.log("Looking for date:", date, "in data.");
+    console.log("days data:", dailyOhlc);
     if (dailyOhlc) {
       return {
-        open: dailyOhlc['1. open' as keyof typeof dailyOhlc] as number,
-        high: dailyOhlc['2. high' as keyof typeof dailyOhlc] as number,
-        low: dailyOhlc['3. low' as keyof typeof dailyOhlc] as number,
-        close: dailyOhlc['4. close' as keyof typeof dailyOhlc] as number,
+        open: Number(dailyOhlc['1. open' as keyof typeof dailyOhlc]),
+        high: Number(dailyOhlc['2. high' as keyof typeof dailyOhlc]),
+        low: Number(dailyOhlc['3. low' as keyof typeof dailyOhlc]),
+        close: Number(dailyOhlc['4. close' as keyof typeof dailyOhlc]),
       };
     } else {
       console.log(`No daily OHLC data found for ${ticker} on ${date}, using mock data.`);
@@ -82,8 +84,11 @@ const getTradeData = async () => {
   const snapshot = await tradeCollection.get();
   const items = snapshot.docs.map((doc: any) => doc.data());
   const tradePromises = await items.map(async (trade: any) => {
-    const ohlc = await getOhlcDataForTrade(trade.ticker, trade.date);
-    const rating = calculateTradeRating(trade, ohlc);
+    let rating = trade.rating;
+    if(!rating) {
+      const ohlc = await getOhlcDataForTrade(trade.ticker, trade.date);
+      rating = calculateTradeRating(trade, ohlc);
+    }
     return { ...trade, rating };
   });
   trades = await Promise.all(tradePromises);

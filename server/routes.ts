@@ -47,13 +47,13 @@ router.post('/trades', async (req, res) => {
     }
 });
 
-router.get('/ohlc', (req, res) => {
+router.get('/ohlc', async (req, res) => {
     try {
         const { ticker, date } = req.query;
         if (typeof ticker !== 'string' || typeof date !== 'string') {
             return res.status(400).json({ error: 'Ticker and date query parameters are required.' });
         }
-        const ohlc = getOhlcDataForTrade(ticker, date);
+        const ohlc = await getOhlcDataForTrade(ticker, date);
         res.json(ohlc);
     } catch (error) {
         console.error("Error fetching OHLC data:", error);
