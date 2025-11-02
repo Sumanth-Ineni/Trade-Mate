@@ -139,12 +139,12 @@ export const TradeList: React.FC<TradeListProps> = ({ trades, sortConfig, setSor
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">${trade.price.toFixed(2)}</td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300 hidden md:table-cell">{trade.quantity}</td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
-                      {/* <div className="flex items-center">
+                      <div className="flex items-center">
                           <div className="w-16 h-2 bg-gray-600 rounded-full overflow-hidden mr-2">
                             <div className={`h-full ${getRatingColor(trade.rating)}`} style={{ width: `${(trade.rating + 1) / 2 * 100}%`}}></div>
                           </div>
                           <span className="font-mono">{trade.rating?.toFixed(2)}</span>
-                      </div> */}
+                      </div>
                   </td>
                 </tr>
                 {expandedTradeId === trade.id && (

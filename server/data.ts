@@ -124,6 +124,7 @@ export const getTrades = async (sortConfig: SortConfig, page: number, limit: num
 
 export const addTrade = async (trade: Omit<Trade, 'id' | 'rating'>): Promise<Trade> => {
   const ohlc = await getOhlcDataForTrade(trade.ticker, trade.date);
+  console.log('OHLC data for new trade:', ohlc);
   const rating = calculateTradeRating(trade, ohlc);
   const newTrade: Trade = {
     ...trade,
