@@ -143,9 +143,10 @@ export const addTrade = async (trade: Omit<Trade, 'id' | 'rating'>): Promise<Tra
 };
 
 export const getTradeById = async (id: string): Promise<Trade | undefined> => {
-  const trade = await tradeCollection.doc(id).get();
-  if (trade.exists) {
-    return trade.data() as Trade;
+  const trade = await tradeCollection.where("id", "==", id).limit(1).get();
+  if (trade.size > 0) {
+    const doc = trade.docs[0];
+    return doc.data() as Trade;
   }
   return undefined;
 };
