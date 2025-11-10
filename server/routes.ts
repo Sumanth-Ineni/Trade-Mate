@@ -67,24 +67,21 @@ router.get('/trades/:id/analysis', async (req, res) => {
     try {
         const { id } = req.params;
         const trade = await getTradeById(id);
-
+        
         if (!trade) {
             return res.status(404).json({ error: 'Trade not found.' });
         }
 
-        const prompt = `Given the following stock trade: {ticker: '${trade.ticker}', type: '${trade.type}', price: ${trade.price} on ${trade.date}, which received a quality rating of ${trade.rating.toFixed(2)}}, provide a brief, one or two-sentence analysis of why this might have been a good or bad trade. Base the analysis on fictional market events or technical indicators for that day. Be creative but concise. Do not give financial advice.`;
-        
+        const prompt = `Given the following stock trade: {ticker: '${trade.ticker}', type: '${trade.type}', price: ${trade.price} on ${trade.date}, which received a quality rating of ${trade.rating.toFixed(2)}}, provide a brief, one or two-sentence analysis of why this might have been a good or bad trade. Base the analysis on market events or technical indicators for that day. Be creative but concise and keept the response short.`;
+
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
                 temperature: 0.6,
-                maxOutputTokens: 100,
             }
         });
-
         res.json({ analysis: response.text });
-
     } catch (error) {
         console.error(`Gemini API call failed for trade analysis ${req.params.id}:`, error);
         res.status(500).json({ error: "Failed to fetch trade analysis from Gemini API." });
@@ -97,7 +94,7 @@ router.get('/suggestions/daily', async (req, res) => {
         const response = await ai.models.generateContent({
             // FIX: Corrected Gemini model name from 'gem-2.5-flash' to 'gemini-2.5-flash'.
             model: 'gemini-2.5-flash',
-            contents: `Generate a single stock trade suggestion for today. Base it on fictional market sentiment or a technical indicator. If the suggested action is 'Buy', you must also include a stop-loss price. The prices should be realistic numbers.`,
+            contents: `Generate a single stock trade suggestion for today. Base it on market sentiment and a technical indicator. If the suggested action is 'Buy', you must also include a stop-loss price. The prices should be realistic numbers.`,
             config: {
                 temperature: 0.7,
                 responseMimeType: "application/json",
