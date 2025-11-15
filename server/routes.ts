@@ -16,7 +16,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 router.get('/trades', async (req, res) => {
     try {
         const { sortKey, sortDirection, page, limit } = req.query;
-        
+
         const sortConfig: SortConfig = {
             key: (sortKey as any) || 'date',
             direction: sortDirection === 'descending' ? 'descending' : 'ascending',
@@ -67,7 +67,7 @@ router.get('/trades/:id/analysis', async (req, res) => {
     try {
         const { id } = req.params;
         const trade = await getTradeById(id);
-        
+
         if (!trade) {
             return res.status(404).json({ error: 'Trade not found.' });
         }
@@ -94,7 +94,11 @@ router.get('/suggestions/daily', async (req, res) => {
         const response = await ai.models.generateContent({
             // FIX: Corrected Gemini model name from 'gem-2.5-flash' to 'gemini-2.5-flash'.
             model: 'gemini-2.5-flash',
-            contents: `Generate a single stock trade suggestion for today. Base it on market sentiment and a technical indicator. If the suggested action is 'Buy', you must also include a stop-loss price. The prices should be realistic numbers.`,
+            contents: `Generate a single stock trade suggestion for today. 
+            Base it on market sentiment and a technical indicators. 
+            If the suggested action is 'Buy', you must also include a stop-loss price. 
+            The prices should be real. 
+            Also give more weight to small tickers than mega caps and if the mega caps are still attractive after the weighting, include them.`,
             config: {
                 temperature: 0.7,
                 responseMimeType: "application/json",
