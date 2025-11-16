@@ -107,6 +107,15 @@ router.get('/suggestions/daily', async (req, res) => {
                 "stopLossPrice": 145.00, // Required if action is 'Buy'
                 "rationale": "A brief, 2-sentence rationale for the suggestion."
             }`;
+    } else {
+        prompt = prompt + `Provide the response in the following JSON format:
+            {
+                "ticker": "AAPL",
+                "action": "Buy" or "Sell",
+                "targetPrice": 150.00,
+                "stopLossPrice": 145.00, // Required if action is 'Buy'
+                "rationale": "A brief, 2-sentence rationale for the suggestion."
+            }`;
     }
     try {
         const groundingTool = {
