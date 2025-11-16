@@ -92,19 +92,32 @@ router.get('/trades/:id/analysis', async (req, res) => {
 router.get('/suggestions/daily', async (req, res) => {
     let prompt = req.query.prompt;
     if (!prompt) {
-        prompt = `Generate a single stock trade suggestion for today. 
+        prompt = `Generate a single stock trade suggestion for today.
+            You must first perform a search to find the most recent closing price for a stock
             Base it on market sentiment and a technical indicators. 
             If the suggested action is 'Buy', you must also include a stop-loss price. 
-            The prices should be real. 
-            Also give more weight to small tickers than mega caps and if the mega caps are still attractive after the weighting, include them.`;
+            The stock prices should be real and a suggested buy/sell should make sense.
+            By sense the price should be within a reasonable range of the current market price and the current market price should be valid as well. 
+            Also give more weight to small tickers than mega caps and if the mega caps are still attractive after the weighting, include them.
+            Provide the response in the following JSON format:
+            {
+                "ticker": "AAPL",
+                "action": "Buy" or "Sell",
+                "targetPrice": 150.00,
+                "stopLossPrice": 145.00, // Required if action is 'Buy'
+                "rationale": "A brief, 2-sentence rationale for the suggestion."
+            }`;
     }
     try {
+        const groundingTool = {
+            googleSearch: {},
+        };
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
-                temperature: 0.7,
-                responseMimeType: "application/json",
+                temperature: 0,
+                tools: [groundingTool],
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
@@ -122,13 +135,24 @@ router.get('/suggestions/daily', async (req, res) => {
         // Guard against undefined response.text from the AI SDK
         const suggestionText = response.text ?? '{}';
         let suggestion: any;
-        try {
-            suggestion = JSON.parse(suggestionText);
-        } catch (err) {
-            // If parsing fails, return the raw text as a fallback
-            suggestion = { raw: suggestionText };
+        const jsonRegex = /{[\s\S]*}/g;
+
+        const match = suggestionText.match(jsonRegex);
+
+        if (match && match.length > 0) {
+            const jsonString = match[0];
+
+            try {
+                suggestion = JSON.parse(jsonString);
+            } catch (err) {
+                // If parsing fails, return the raw text as a fallback
+                suggestion = { raw: suggestionText };
+            }
+            res.json(suggestion);
         }
-        res.json(suggestion);
+        else {
+            throw new Error("No valid JSON found in the AI response.");
+        }
     } catch (error) {
         console.error("Gemini API call failed for daily suggestion:", error);
         res.status(500).json({ error: "Failed to fetch suggestion from Gemini API." });
