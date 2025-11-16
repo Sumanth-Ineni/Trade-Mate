@@ -90,15 +90,18 @@ router.get('/trades/:id/analysis', async (req, res) => {
 
 
 router.get('/suggestions/daily', async (req, res) => {
-    try {
-        const response = await ai.models.generateContent({
-            // FIX: Corrected Gemini model name from 'gem-2.5-flash' to 'gemini-2.5-flash'.
-            model: 'gemini-2.5-flash',
-            contents: `Generate a single stock trade suggestion for today. 
+    let prompt = req.query.prompt;
+    if (!prompt) {
+        prompt = `Generate a single stock trade suggestion for today. 
             Base it on market sentiment and a technical indicators. 
             If the suggested action is 'Buy', you must also include a stop-loss price. 
             The prices should be real. 
-            Also give more weight to small tickers than mega caps and if the mega caps are still attractive after the weighting, include them.`,
+            Also give more weight to small tickers than mega caps and if the mega caps are still attractive after the weighting, include them.`;
+    }
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
             config: {
                 temperature: 0.7,
                 responseMimeType: "application/json",

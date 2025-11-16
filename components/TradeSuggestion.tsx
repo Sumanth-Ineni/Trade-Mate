@@ -1,30 +1,27 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { getDailySuggestion } from '../services/geminiService';
 import type { TradeSuggestionData } from '../types';
 
 export const TradeSuggestion: React.FC = () => {
   const [suggestion, setSuggestion] = useState<TradeSuggestionData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [prompt, setPrompt] = useState('');
 
-  useEffect(() => {
-    const fetchSuggestion = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await getDailySuggestion();
-        setSuggestion(response);
-      } catch (error) {
-        console.error("Error fetching daily suggestion:", error);
-        setError("Could not load a suggestion at this time.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSuggestion();
-  }, []);
+  const handleFetchSuggestion = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await getDailySuggestion(prompt || undefined);
+      setSuggestion(response);
+    } catch (error) {
+      console.error("Error fetching daily suggestion:", error);
+      setError("Could not load a suggestion at this time.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const renderContent = () => {
     if (isLoading) {
@@ -77,6 +74,30 @@ export const TradeSuggestion: React.FC = () => {
   return (
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold mb-4 text-white">AI Trade Suggestion</h2>
+      
+      <div className="mb-4 space-y-2">
+        <label className="block text-sm text-gray-300">
+          Optional Prompt
+        </label>
+        <div className="flex flex-col gap-2">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="E.g., focus on tech stocks, bearish outlook, growth potential in emerging markets, etc."
+            className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-400 resize-none"
+            rows={4}
+            disabled={isLoading}
+          />
+          <button
+            onClick={handleFetchSuggestion}
+            disabled={isLoading}
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-medium transition-colors"
+          >
+            {isLoading ? 'Loading...' : 'Get Suggestion'}
+          </button>
+        </div>
+      </div>
+
       <div className="bg-gray-700/50 p-4 rounded-md min-h-[180px] flex items-center justify-center">
         {renderContent()}
       </div>
