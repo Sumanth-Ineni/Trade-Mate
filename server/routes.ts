@@ -1,7 +1,7 @@
 // FIX: Changed to `import = require()` for CommonJS compatibility and `export =` for the module export.
 import express = require('express');
 import { GoogleGenAI, Type } from "@google/genai";
-import { getTrades, addTrade, getOhlcDataForTrade, getTradeById } from './data';
+import { getTrades, addTrade, getOhlcDataForTrade, getTradeById, getDailySuggestion, storeDailySuggestion } from './data';
 import type { SortConfig, Trade } from './data';
 
 const router = express.Router();
@@ -90,15 +90,21 @@ router.get('/trades/:id/analysis', async (req, res) => {
 
 
 router.get('/suggestions/daily', async (req, res) => {
-    let prompt = req.query.prompt;
-    if (!prompt) {
-        prompt = `Generate a single stock trade suggestion for today.
+    const dailySuggestionFromDb = await getDailySuggestion(Date.now());
+    if (dailySuggestionFromDb) {
+        return res.json(dailySuggestionFromDb);
+    }
+
+    // If no suggestion in DB for today, generate a new one
+    const prompt = `Generate a single stock trade suggestion for today.
             You must first perform a search to find the most recent closing price for a stock
             Base it on market sentiment and a technical indicators. 
             If the suggested action is 'Buy', you must also include a stop-loss price. 
             The stock prices should be real and a suggested buy/sell should make sense.
             By sense the price should be within a reasonable range of the current market price and the current market price should be valid as well. 
             Also give more weight to small tickers than mega caps and if the mega caps are still attractive after the weighting, include them.
+            Use the sentiment from the search results and social media posts to guide your suggestion.
+            And this suggestion is for day trading, so suggestions should be for short-term movements only.
             Provide the response in the following JSON format:
             {
                 "ticker": "AAPL",
@@ -107,16 +113,16 @@ router.get('/suggestions/daily', async (req, res) => {
                 "stopLossPrice": 145.00, // Required if action is 'Buy'
                 "rationale": "A brief, 2-sentence rationale for the suggestion."
             }`;
-    } else {
-        prompt = prompt + `Provide the response in the following JSON format:
-            {
-                "ticker": "AAPL",
-                "action": "Buy" or "Sell",
-                "targetPrice": 150.00,
-                "stopLossPrice": 145.00, // Required if action is 'Buy'
-                "rationale": "A brief, 2-sentence rationale for the suggestion."
-            }`;
-    }
+    // } else {
+    //     prompt = prompt + `Provide the response in the following JSON format:
+    //         {
+    //             "ticker": "AAPL",
+    //             "action": "Buy" or "Sell",
+    //             "targetPrice": 150.00,
+    //             "stopLossPrice": 145.00, // Required if action is 'Buy'
+    //             "rationale": "A brief, 2-sentence rationale for the suggestion."
+    //         }`;
+    // }
     try {
         const groundingTool = {
             googleSearch: {},
@@ -153,6 +159,8 @@ router.get('/suggestions/daily', async (req, res) => {
 
             try {
                 suggestion = JSON.parse(jsonString);
+                // Saving the suggestion to the database.
+                storeDailySuggestion(suggestion);
             } catch (err) {
                 // If parsing fails, return the raw text as a fallback
                 suggestion = { raw: suggestionText };

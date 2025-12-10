@@ -150,3 +150,23 @@ export const getTradeById = async (id: string): Promise<Trade | undefined> => {
   }
   return undefined;
 };
+
+export const storeDailySuggestion = async (suggestion: any): Promise<void> => {
+  const dateKey = new Date().toISOString().split('T')[0];
+  const suggestionDoc = db.collection('dailySuggestions').doc(dateKey);
+  await suggestionDoc.set({
+    ...suggestion,
+    date: dateKey,
+    timestamp: Date.now(),
+  });
+}
+
+export const getDailySuggestion = async (timestamp: number): Promise<any | null> => {
+  const dateKey = new Date(timestamp).toISOString().split('T')[0];
+  const suggestionDoc = db.collection('dailySuggestions').doc(dateKey);
+  const doc = await suggestionDoc.get();
+  if (doc.exists) {
+    return doc.data();
+  }
+  return null;
+}
