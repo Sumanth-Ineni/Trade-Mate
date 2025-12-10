@@ -4,9 +4,14 @@
 
 # Run and deploy your AI Studio app
 
-This contains everything you need to run your app locally.
+## Deploy
 
-View your app in AI Studio: https://aistudio-preprod.corp.google.com/apps/drive/1zng0KXhWY4Yj9MgRPIR_djBwmgZuLEsm
+### Server
+Serve is deployed using cloud run so every commit to github will automatically deploy the server
+
+### UI
+1. Build the app first: `npm run build`
+2. Deploy to firebase: `firebase deploy`
 
 ## Run Locally
 
