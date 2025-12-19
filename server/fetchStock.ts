@@ -62,7 +62,7 @@ export async function getDailyOHLC(symbol: string): Promise<TimeSeriesDaily | nu
     const timeSeries: TimeSeriesDaily | undefined = data[timeSeriesKey]; 
 
     if (!timeSeries) {
-        console.log(`No daily time series data found for ${symbol}.`);
+        console.log(`No daily time series data found for ${symbol}. Got response: ${data}`);
         return null;
     }
 

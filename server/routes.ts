@@ -1,8 +1,9 @@
 // FIX: Changed to `import = require()` for CommonJS compatibility and `export =` for the module export.
 import express = require('express');
 import { GoogleGenAI, Type } from "@google/genai";
-import { getTrades, addTrade, getOhlcDataForTrade, getTradeById, getDailySuggestion, storeDailySuggestion } from './data';
-import type { SortConfig, Trade } from './data';
+import { getTrades, addTrade, getOhlcDataForTrade, getTradeById, getDailySuggestion, getTradeSuggestions, storeDailySuggestion } from './data';
+import type { SortConfig } from './data';
+import { convertRecentTradesToPrompt } from './utils';
 
 const router = express.Router();
 
@@ -96,6 +97,14 @@ router.get('/suggestions/daily', async (req, res) => {
     }
 
     // If no suggestion in DB for today, generate a new one
+    // First get recent five trades
+    const recentFiveTradeSuggestions = await getTradeSuggestions({ key: 'date', direction: 'descending' }, 5);
+    // Get market data for the fetched suggestions
+    const ohlcForRecentTrades = await Promise.all(recentFiveTradeSuggestions.map(async (trade) => {
+        const ohlc = await getOhlcDataForTrade(trade.ticker, trade.date);
+        return { ...ohlc, ticker: trade.ticker, date: trade.date };
+    }));
+    const convertToPrompt = convertRecentTradesToPrompt(recentFiveTradeSuggestions, ohlcForRecentTrades);
     const prompt = `Generate a single stock trade suggestion for today.
             You must first perform a search to find the most recent closing price for a stock
             Base it on market sentiment and a technical indicators. 
@@ -105,6 +114,10 @@ router.get('/suggestions/daily', async (req, res) => {
             Also give more weight to small tickers than mega caps and if the mega caps are still attractive after the weighting, include them.
             Use the sentiment from the search results and social media posts to guide your suggestion.
             And this suggestion is for day trading, so suggestions should be for short-term movements only.
+            Here are some recent trade suggestions you suggested and their OHLC data:
+            ${convertToPrompt}
+            Provide a single trade suggestion for today based on the above recent trades and their outcomes.
+            
             Provide the response in the following JSON format:
             {
                 "ticker": "AAPL",

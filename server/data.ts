@@ -41,20 +41,6 @@ const calculateTradeRating = (trade: Pick<Trade, 'price' | 'type'>, ohlc: OhlcDa
 };
 
 
-// --- Data Layer (Simulated Database) ---
-
-const mockOhlcDatabase: { [key: string]: { [date: string]: { open: number; high: number; low: number; close: number } } } = {
-  'AAPL': {
-    '2024-07-20': { open: 149.80, high: 151.00, low: 149.50, close: 150.75 },
-    '2024-07-21': { open: 151.00, high: 156.00, low: 150.80, close: 155.00 },
-  },
-  'GOOGL': { '2024-07-20': { open: 2790.00, high: 2810.00, low: 2785.00, close: 2805.00 } },
-  'TSLA': { '2024-07-22': { open: 645.00, high: 660.00, low: 640.00, close: 655.00 } },
-  'MSFT': { '2024-07-23': { open: 298.00, high: 301.00, low: 297.50, close: 300.50 } },
-  'NVDA': { '2024-07-19': { open: 120.00, high: 130.00, low: 119.50, close: 128.00 } },
-  'AMD': { '2024-07-18': { open: 165.00, high: 166.00, low: 160.00, close: 161.00 } },
-};
-
 let trades: Trade[] = [];
 
 export const getOhlcDataForTrade = async (ticker: string, date: string): Promise<{ open: number; high: number; low: number; close: number }> => {
@@ -83,7 +69,7 @@ const getTradeData = async () => {
   const items = snapshot.docs.map((doc: any) => doc.data());
   const tradePromises = await items.map(async (trade: any) => {
     let rating = trade.rating;
-    if(!rating) {
+    if (!rating) {
       const ohlc = await getOhlcDataForTrade(trade.ticker, trade.date);
       rating = calculateTradeRating(trade, ohlc);
     }
@@ -170,3 +156,11 @@ export const getDailySuggestion = async (timestamp: number): Promise<any | null>
   }
   return null;
 }
+
+export const getTradeSuggestions = async (sortConfig: SortConfig, limit: number) => {
+  const snapshot = await db.collection('dailySuggestions')
+    .orderBy(sortConfig.key, sortConfig.direction === 'ascending' ? 'asc' : 'desc')
+    .limit(limit).get();
+
+  return snapshot.docs.map((doc: any) => doc.data());
+};
